@@ -21,17 +21,35 @@ struct KadastrTable{
     int size;
     int append(Kadastr note);
     void print();
+
     Kadastr LinearSearchBarrier(int id);
+    Kadastr BruteForce(int id);
     ~KadastrTable();
 };
+
 Kadastr KadastrTable::LinearSearchBarrier(int id){
+    if(size == 0) {
+        return Kadastr{0, "NO NAME"};
+    }
+    Kadastr last = kadastr[size-1];
+    kadastr[size-1].id = id;
+    int i;
+    for(i=0; kadastr[i].id!= id;++i){}
+    kadastr[size-1] = last;
+    if(i != size-1 || id == last.id){
+        return kadastr[i];
+    }
+    return Kadastr{0, "NO NAME"};
+}
+Kadastr KadastrTable::BruteForce(int id){
     for(int i = 0; i < size; i++){
         if(kadastr[i].id == id){
             return kadastr[i];
         }
     }
-    return Kadastr();
+    return Kadastr{-1, "NULL"};
 }
+
 int KadastrTable::append(Kadastr note) {
     Kadastr *tmp = new Kadastr[size+ 1];
     //memcpy(tmp, kadastr, size * sizeof(Kadastr));
@@ -53,32 +71,32 @@ KadastrTable::~KadastrTable() {
     delete[] kadastr;
 }
 
-Kadastr brute_force( const KadastrTable& kadastr_table, int id) {
-    for (int i = 0; i < kadastr_table.size; i++) {
-        if (kadastr_table.kadastr[i].id == id) {
-            return kadastr_table.kadastr[i];
-        }
-    }
-    return Kadastr{0, "NO NAME"};
-}
-
-Kadastr linear_search_barrier(const KadastrTable& kadastr_table, int id) {
-    if(kadastr_table.size == 0) {
-        return Kadastr{0, "NO NAME"};
-    }
-    Kadastr last = kadastr_table.kadastr[kadastr_table.size-1];
-    kadastr_table.kadastr[kadastr_table.size-1].id = id;
-    int i;
-    for(i=0; kadastr_table.kadastr[i].id!= id;++i){}
-    kadastr_table.kadastr[kadastr_table.size-1] = last;
-    if(i != kadastr_table.size-1 || id == last.id){
-        return kadastr_table.kadastr[i];
-    }
-    return Kadastr{0, "NO NAME"};
-}
+//Kadastr brute_force( const KadastrTable& kadastr_table, int id) {
+//    for (int i = 0; i < kadastr_table.size; i++) {
+//        if (kadastr_table.kadastr[i].id == id) {
+//            return kadastr_table.kadastr[i];
+//        }
+//    }
+//    return Kadastr{0, "NO NAME"};
+//}
+//
+//Kadastr linear_search_barrier(const KadastrTable& kadastr_table, int id) {
+//    if(kadastr_table.size == 0) {
+//        return Kadastr{0, "NO NAME"};
+//    }
+//    Kadastr last = kadastr_table.kadastr[kadastr_table.size-1];
+//    kadastr_table.kadastr[kadastr_table.size-1].id = id;
+//    int i;
+//    for(i=0; kadastr_table.kadastr[i].id!= id;++i){}
+//    kadastr_table.kadastr[kadastr_table.size-1] = last;
+//    if(i != kadastr_table.size-1 || id == last.id){
+//        return kadastr_table.kadastr[i];
+//    }
+//    return Kadastr{0, "NO NAME"};
+//}
 //==================HASH TABLE==========================
 struct HashTable{
-    const int start_size = 5000;
+    const int start_size = 1000000;
     HashTable();
     Kadastr *kadastr;
     int load=0;
@@ -93,14 +111,14 @@ HashTable::HashTable() {
     size = start_size;
 }
 int HashFunction(int id) {
-    return id % 5000;
+    return id % 1000000;
 }
 double HashTable::calculate_load_factor() {
     return (double)load/size;
 }
 int HashTable::add(Kadastr note) {
 
-    if(calculate_load_factor() > 0.75) {
+    if(calculate_load_factor() > 0.7) {
         Kadastr *tmp = new Kadastr[size*2];
         for (int i = 0; i < size; i++) {
             tmp[i] = kadastr[i];
@@ -159,40 +177,37 @@ Kadastr HashTable::get(int id) {
 
 int main() {
     srand(time(NULL));
-    for(int i=0; i<10; i++) {
-        cout << random_number() << endl;
-    }
-    for(int i = 100; i<=100000;i*=10){
+    for(int i = 100, d=0; i<=10000;i = d%2==0 ? i*=10 : i+=0){
+        d++;
         KadastrTable kadastr_table{};
+        HashTable hash_table{};
         for(int j = 0; j<i; j++){
             int id = random_number();
             kadastr_table.append(Kadastr{id, "SNT_" + to_string(id)});
+            hash_table.add(Kadastr{id, "SNT_" + to_string(id)});
         }
-        cout<<"Random note: "<<kadastr_table.kadastr[rand()%i].id<<endl;
-        int search_id;
-        cin>>search_id;
+        int random_search =kadastr_table.kadastr[rand()%i].id;
+        cout<<"Random note: "<<random_search<<endl;
+        int search_id = random_search;
+        //cin>>search_id;
+
 
         auto start = chrono::steady_clock::now();
-        brute_force(kadastr_table, search_id);
+        kadastr_table.BruteForce(search_id);
         auto end = chrono::steady_clock::now();
         auto diff = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
         cout<<"Brute force(" << i << "): "<< diff <<" ns"<<endl;
 
         start = chrono::steady_clock::now();
-        cout<<linear_search_barrier(kadastr_table, search_id).SNT_adress<<endl;
+        kadastr_table.LinearSearchBarrier(search_id);
         end = chrono::steady_clock::now();
         diff = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
         cout<<"Linear search barrier(" << i << "): "<<diff<<" ns"<<endl;
 
 
-        HashTable hash_table{};
-        for(int j = 0; j<i; j++){
-            int id = random_number();
-            hash_table.add(Kadastr{id, "SNT_" + to_string(id)});
-        }
-
+        Kadastr temp;
         start = chrono::steady_clock::now();
-        Kadastr temp = hash_table.get(search_id);
+        temp = hash_table.get(search_id);
         end = chrono::steady_clock::now();
         diff = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
         cout<<"Hash table(" << i << "): "<< diff <<" ns"<<endl;
